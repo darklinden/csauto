@@ -147,6 +147,7 @@ def __main__():
     home = os.path.expanduser("~")
     profiles_path = os.path.join(home, "Library/MobileDevice/Provisioning Profiles/")
 
+    file_duplicate_detector = {}
     profile_list_name_match = []
     profile_list = []
     
@@ -201,30 +202,71 @@ def __main__():
         
         Name = plist_obj["Name"]
         # print("get Name: [" + Name + "]\n")
+        
+        ExpirationDate = plist_obj["ExpirationDate"]
 
         obj = {}
+        obj["path"] = fpath
         obj["Name"] = Name
         obj["mode"] = profile_mode
         obj["UUID"] = UUID
         obj["TeamName"] = TeamName
+        obj["ExpirationDate"] = ExpirationDate
 
-        if bundle_id == e_bundle_id:
-            profile_list_name_match.append(obj)
+        key = "[" + Name + "]-[" + TeamName + "]-[" + profile_mode + "]"
+        saved_obj = file_duplicate_detector.get(key, {})
+        if saved_obj == {}:
+            file_duplicate_detector[key] = obj
+            if bundle_id == e_bundle_id:
+                profile_list_name_match.append(obj)
+            else:
+                profile_list.append(obj)
         else:
-            profile_list.append(obj)
+            if obj["ExpirationDate"] > saved_obj["ExpirationDate"]:
+                print("remove " + saved_obj["path"])
+                # os.remove(os.path.join(profiles_path, saved_obj["path"]))
 
-    profile_list = sorted(profile_list, key=lambda obj: obj["TeamName"])
-    profile_list_name_match = sorted(profile_list_name_match, key=lambda obj: obj["TeamName"])
+                if bundle_id == e_bundle_id:
+                    new_list = []
+                    for one_obj in profile_list_name_match:
+                        if one_obj["Name"] == obj["Name"] and one_obj["mode"] == obj["mode"] and one_obj["TeamName"] == obj["TeamName"]:
+                            continue
+                        else:
+                            new_list.append(one_obj)
+
+                    profile_list_name_match = new_list
+                    profile_list_name_match.append(obj)
+                else:
+                    new_list = []
+                    for one_obj in profile_list:
+                        if one_obj["Name"] == obj["Name"] and one_obj["mode"] == obj["mode"] and one_obj["TeamName"] == obj["TeamName"]:
+                            continue
+                        else:
+                            new_list.append(one_obj)
+
+                    profile_list = new_list
+                    profile_list.append(obj)
+
+            else:
+                print("remove " + obj["path"])
+                # os.remove(os.path.join(profiles_path, obj["path"]))
 
     print("found profiles could sign this bundle id:")
 
     if len(profile_list_name_match) > 0:
+
+        profile_list_name_match = sorted(profile_list_name_match, key=lambda obj: obj["TeamName"])
+
         cmds = []
         idx = 0
         while idx < len(profile_list_name_match):
             cmds.append(str(idx))
             obj = profile_list_name_match[idx]
-            print(str(idx) + "\t[" + obj["Name"] + "]\n\t[" + obj["mode"] + "]\n\t[" + obj["TeamName"] + "]\n")
+            print(str(idx) + "\t[" + obj["Name"] \
+            + "]\n\t[" + obj["mode"] \
+            + "]\n\t[" + obj["TeamName"] \
+            + "]\n\t[" + obj["UUID"] \
+            + "]\n\t[" + str(obj["ExpirationDate"]) + "]\n")
             idx = idx + 1
 
         cmds.append("q")
@@ -235,12 +277,19 @@ def __main__():
             regex_replace(XCODE_PRJ_PATH, "\"CODE_SIGN_IDENTITY\\[sdk=iphoneos\\*\\]\"[ ]*=[ ,\"]*[a-z,A-Z,0-9,\\-,_,;, ,\"]*", "\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"\";")
             regex_replace(XCODE_PRJ_PATH, "PROVISIONING_PROFILE[ ]+=[ ]+[\",a-z,A-Z,0-9,.,\\-,_,;]*", "PROVISIONING_PROFILE = \"" + obj["UUID"] + "\";")
     else:
+
+        profile_list = sorted(profile_list, key=lambda obj: obj["TeamName"])
+
         cmds = []
         idx = 0
         while idx < len(profile_list):
             cmds.append(str(idx))
             obj = profile_list[idx]
-            print(str(idx) + "\t[" + obj["Name"] + "]\n\t[" + obj["mode"] + "]\n\t[" + obj["TeamName"] + "]\n")
+            print(str(idx) + "\t[" + obj["Name"] \
+            + "]\n\t[" + obj["mode"] \
+            + "]\n\t[" + obj["TeamName"] \
+            + "]\n\t[" + obj["UUID"] \
+            + "]\n\t[" + str(obj["ExpirationDate"]) + "]\n")
             idx = idx + 1
 
         cmds.append("q")

@@ -266,7 +266,8 @@ def __main__():
             + "]\n\t[" + obj["mode"] \
             + "]\n\t[" + obj["TeamName"] \
             + "]\n\t[" + obj["UUID"] \
-            + "]\n\t[" + str(obj["ExpirationDate"]) + "]\n")
+            + "]\n\t[" + str(obj["ExpirationDate"]) \
+            + "]\n\t[" + os.path.join(profiles_path, obj["UUID"] + ".mobileprovision]\n"))
             idx = idx + 1
 
         cmds.append("q")
@@ -289,7 +290,8 @@ def __main__():
             + "]\n\t[" + obj["mode"] \
             + "]\n\t[" + obj["TeamName"] \
             + "]\n\t[" + obj["UUID"] \
-            + "]\n\t[" + str(obj["ExpirationDate"]) + "]\n")
+            + "]\n\t[" + str(obj["ExpirationDate"]) \
+            + "]\n\t[" + os.path.join(profiles_path, obj["UUID"] + ".mobileprovision]\n"))
             idx = idx + 1
 
         cmds.append("q")
